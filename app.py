@@ -5,11 +5,13 @@ import psycopg2
 
 app = Flask(__name__)
 
-# Reusable PostgreSQL connection function
-def get_connection():
-    return psycopg2.connect(os.environ.get("postgresql://issue_tracker_db_297y_user:2LrHcy6UGkOCCeaHL9AzwCoSNIMfgnmP@dpg-d11mqvogjchc73864to0-a/issue_tracker_db_297y"))
+# Get DB URL from environment variable
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# Initialize the PostgreSQL DB (run on app start)
+def get_connection():
+    return psycopg2.connect(DATABASE_URL)
+
+# Initialize the PostgreSQL DB (create table if not exists)
 def init_db():
     conn = get_connection()
     c = conn.cursor()
@@ -27,7 +29,6 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Homepage route — show all issues
 @app.route('/')
 def index():
     conn = get_connection()
@@ -37,8 +38,29 @@ def index():
     conn.close()
     return render_template("index.html", issues=issues)
 
-# Add issue route
 @app.route('/add', methods=['GET', 'POST'])
 def add_issue():
     if request.method == 'POST':
-        da
+        data = (
+            request.form['title'],
+            request.form['description'],
+            request.form['priority'],
+            request.form['status'],
+            request.form['assigned_to'],
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        )
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute('''
+            INSERT INTO issues (title, description, priority, status, assigned_to, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        ''', data)
+        conn.commit()
+        conn.close()
+        return redirect('/')
+    return render_template("add_issue.html")
+
+if __name__ == "__main__":
+    init_db()
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
