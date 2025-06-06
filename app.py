@@ -1,16 +1,21 @@
 from flask import Flask, render_template, request, redirect
-import sqlite3
 from datetime import datetime
 import os
+import psycopg2
 
 app = Flask(__name__)
 
+# Reusable PostgreSQL connection function
+def get_connection():
+    return psycopg2.connect(os.environ.get("postgresql://issue_tracker_db_297y_user:2LrHcy6UGkOCCeaHL9AzwCoSNIMfgnmP@dpg-d11mqvogjchc73864to0-a/issue_tracker_db_297y"))
+
+# Initialize the PostgreSQL DB (run on app start)
 def init_db():
-    conn = sqlite3.connect('issues.db')
+    conn = get_connection()
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS issues (
-            id INTEGER PRIMARY KEY,
+            id SERIAL PRIMARY KEY,
             title TEXT,
             description TEXT,
             priority TEXT,
@@ -22,39 +27,18 @@ def init_db():
     conn.commit()
     conn.close()
 
+# Homepage route — show all issues
 @app.route('/')
 def index():
-    conn = sqlite3.connect('issues.db')
+    conn = get_connection()
     c = conn.cursor()
     c.execute("SELECT * FROM issues")
     issues = c.fetchall()
     conn.close()
     return render_template("index.html", issues=issues)
 
+# Add issue route
 @app.route('/add', methods=['GET', 'POST'])
 def add_issue():
     if request.method == 'POST':
-        data = (
-            request.form['title'],
-            request.form['description'],
-            request.form['priority'],
-            request.form['status'],
-            request.form['assigned_to'],
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        )
-        conn = sqlite3.connect('issues.db')
-        c = conn.cursor()
-        c.execute('''
-            INSERT INTO issues (title, description, priority, status, assigned_to, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', data)
-        conn.commit()
-        conn.close()
-        return redirect('/')
-    return render_template("add_issue.html")
-
-# ✅ Only one main block — with correct port and host
-if __name__ == "__main__":
-    init_db()
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+        da
