@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect
 import sqlite3
 from datetime import datetime
+import os
 
 app = Flask(__name__)
 
@@ -52,13 +53,7 @@ def add_issue():
         return redirect('/')
     return render_template("add_issue.html")
 
-if __name__ == "__main__":
-    init_db()
-    app.run(debug=True)
-
-
-import os
-
+# ✅ Only one main block — with correct port and host
 if __name__ == "__main__":
     init_db()
     port = int(os.environ.get("PORT", 5000))
