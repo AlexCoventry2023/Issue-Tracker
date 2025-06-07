@@ -15,9 +15,12 @@ def get_db_connection():
 @app.route('/')
 def index():
     conn = get_db_connection()
-    issues = conn.execute("SELECT * FROM issues WHERE status != 'closed' ORDER BY created_at DESC").fetchall()
+    with conn.cursor() as cur:
+        cur.execute("SELECT * FROM issues WHERE status != 'closed' ORDER BY created_at DESC")
+        issues = cur.fetchall()
     conn.close()
     return render_template('index.html', issues=issues)
+
 
 # View a single ticket
 @app.route('/issue/<int:id>')
