@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Closed Tickets</title>
+</head>
+<body>
+    <h1>Closed Tickets</h1>
+    <a href="{{ url_for('index') }}">← Back to Open Tickets</a>
+
+    {% if issues %}
+        <ul>
+            {% for issue in issues %}
+                <li>
+                    <a href="{{ url_for('issue', id=issue.id) }}">{{ issue.title }}</a>
+                    <br>
+                    Closed at: {{ issue.closed_at }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No closed tickets yet.</p>
+    {% endif %}
+</body>
+</html>
