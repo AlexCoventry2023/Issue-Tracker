@@ -23,7 +23,8 @@ def init_db():
             priority TEXT,
             status TEXT,
             assigned_to TEXT,
-            created_at TEXT
+            created_at TEXT,
+            closed_at TEXT
         )
     ''')
     conn.commit()
@@ -33,10 +34,19 @@ def init_db():
 def index():
     conn = get_connection()
     c = conn.cursor()
-    c.execute("SELECT * FROM issues")
+    c.execute("SELECT * FROM issues WHERE status != 'Closed'")
     issues = c.fetchall()
     conn.close()
     return render_template("index.html", issues=issues)
+
+@app.route('/closed')
+def closed_issues():
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("SELECT * FROM issues WHERE status = 'Closed'")
+    issues = c.fetchall()
+    conn.close()
+    return render_template("closed_issues.html", issues=issues)
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_issue():
@@ -47,13 +57,14 @@ def add_issue():
             request.form['priority'],
             request.form['status'],
             request.form['assigned_to'],
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            None  # closed_at starts as None
         )
         conn = get_connection()
         c = conn.cursor()
         c.execute('''
-            INSERT INTO issues (title, description, priority, status, assigned_to, created_at)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO issues (title, description, priority, status, assigned_to, created_at, closed_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         ''', data)
         conn.commit()
         conn.close()
@@ -67,18 +78,4 @@ def edit_issue(issue_id):
 
     if request.method == 'POST':
         new_status = request.form['status']
-        c.execute("UPDATE issues SET status = %s WHERE id = %s", (new_status, issue_id))
-        conn.commit()
-        conn.close()
-        return redirect('/')
-
-    c.execute("SELECT * FROM issues WHERE id = %s", (issue_id,))
-    issue = c.fetchone()
-    conn.close()
-    return render_template("edit_issue.html", issue=issue)
-
-
-if __name__ == "__main__":
-    init_db()
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+        closed_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S") if new_
