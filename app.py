@@ -8,13 +8,7 @@ app = Flask(__name__)
 
 # Database connection function
 def get_db_connection():
-    conn = psycopg2.connect(
-        host=os.environ.get("DB_HOST", "localhost"),
-        database=os.environ.get("DB_NAME", "mydatabase"),
-        user=os.environ.get("DB_USER", "postgres"),
-        password=os.environ.get("DB_PASSWORD", "password"),
-        cursor_factory=RealDictCursor
-    )
+    conn = psycopg2.connect(os.environ['DATABASE_URL'], sslmode='require')
     return conn
 
 # Home page showing open tickets only
@@ -90,6 +84,7 @@ def closed_issues():
     conn.close()
     return render_template('closed.html', issues=issues)
 
-
 if __name__ == '__main__':
-    app.run(debug=True)
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
