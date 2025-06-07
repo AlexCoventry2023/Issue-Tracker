@@ -80,12 +80,15 @@ def delete(id):
     return redirect(url_for('index'))
 
 # View closed tickets
+from flask import render_template
+
 @app.route('/closed')
 def closed_issues():
-    conn = get_db_connection()
-    issues = conn.execute("SELECT * FROM issues WHERE status = 'closed' ORDER BY closed_at DESC").fetchall()
-    conn.close()
-    return render_template('closed.html', issues=issues)
+    with conn.cursor() as cur:
+        cur.execute("SELECT * FROM issues WHERE status = 'closed' ORDER BY closed_at DESC")
+        issues = cur.fetchall()
+    return render_template('closed_issues.html', issues=issues)
+
 
 if __name__ == '__main__':
     import os
