@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <title>Closed Tickets</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
+<body class="container my-4">
     <h1>Closed Tickets</h1>
-    <a href="{{ url_for('index') }}">← Back to Open Tickets</a>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary mb-3">← Back to Open Tickets</a>
 
     {% if issues %}
-        <ul>
+        <ul class="list-group">
             {% for issue in issues %}
-                <li>
-                    <a href="{{ url_for('issue', id=issue.id) }}">{{ issue.title }}</a>
-                    <br>
-                    Closed at: {{ issue.closed_at }}
+                <li class="list-group-item">
+                    <strong><a href="{{ url_for('issue', id=issue['id']) }}">{{ issue['title'] }}</a></strong><br>
+                    <small class="text-muted">Closed at: {{ issue['closed_at'] }}</small>
                 </li>
             {% endfor %}
         </ul>
     {% else %}
-        <p>No closed tickets yet.</p>
+        <div class="alert alert-info">No closed tickets yet.</div>
     {% endif %}
 </body>
 </html>

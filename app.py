@@ -15,18 +15,19 @@ def get_db_connection():
 @app.route('/')
 def index():
     conn = get_db_connection()
-    with conn.cursor() as cur:
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("SELECT * FROM issues WHERE status != 'closed' ORDER BY created_at DESC")
         issues = cur.fetchall()
     conn.close()
     return render_template('index.html', issues=issues)
 
-
 # View a single ticket
 @app.route('/issue/<int:id>')
 def issue(id):
     conn = get_db_connection()
-    issue = conn.execute("SELECT * FROM issues WHERE id = %s", (id,)).fetchone()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("SELECT * FROM issues WHERE id = %s", (id,))
+        issue = cur.fetchone()
     conn.close()
     return render_template('issue.html', issue=issue)
 
@@ -39,11 +40,12 @@ def create():
         created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         conn = get_db_connection()
-        conn.execute(
-            'INSERT INTO issues (title, description, status, created_at) VALUES (%s, %s, %s, %s)',
-            (title, description, 'open', created_at)
-        )
-        conn.commit()
+        with conn.cursor() as cur:
+            cur.execute(
+                'INSERT INTO issues (title, description, status, created_at) VALUES (%s, %s, %s, %s)',
+                (title, description, 'open', created_at)
+            )
+            conn.commit()
         conn.close()
         return redirect(url_for('index'))
 
@@ -56,17 +58,18 @@ def update(id):
     closed_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S") if new_status == 'closed' else None
 
     conn = get_db_connection()
-    if closed_at:
-        conn.execute(
-            'UPDATE issues SET status = %s, closed_at = %s WHERE id = %s',
-            (new_status, closed_at, id)
-        )
-    else:
-        conn.execute(
-            'UPDATE issues SET status = %s WHERE id = %s',
-            (new_status, id)
-        )
-    conn.commit()
+    with conn.cursor() as cur:
+        if closed_at:
+            cur.execute(
+                'UPDATE issues SET status = %s, closed_at = %s WHERE id = %s',
+                (new_status, closed_at, id)
+            )
+        else:
+            cur.execute(
+                'UPDATE issues SET status = %s WHERE id = %s',
+                (new_status, id)
+            )
+        conn.commit()
     conn.close()
     return redirect(url_for('index'))
 
@@ -74,23 +77,22 @@ def update(id):
 @app.route('/delete/<int:id>', methods=('POST',))
 def delete(id):
     conn = get_db_connection()
-    conn.execute('DELETE FROM issues WHERE id = %s', (id,))
-    conn.commit()
+    with conn.cursor() as cur:
+        cur.execute('DELETE FROM issues WHERE id = %s', (id,))
+        conn.commit()
     conn.close()
     return redirect(url_for('index'))
 
 # View closed tickets
-from flask import render_template
-
 @app.route('/closed')
 def closed_issues():
-    with conn.cursor() as cur:
+    conn = get_db_connection()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("SELECT * FROM issues WHERE status = 'closed' ORDER BY closed_at DESC")
         issues = cur.fetchall()
+    conn.close()
     return render_template('closed_issues.html', issues=issues)
 
-
 if __name__ == '__main__':
-    import os
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
