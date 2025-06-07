@@ -60,6 +60,24 @@ def add_issue():
         return redirect('/')
     return render_template("add_issue.html")
 
+@app.route('/edit/<int:issue_id>', methods=['GET', 'POST'])
+def edit_issue(issue_id):
+    conn = get_connection()
+    c = conn.cursor()
+
+    if request.method == 'POST':
+        new_status = request.form['status']
+        c.execute("UPDATE issues SET status = %s WHERE id = %s", (new_status, issue_id))
+        conn.commit()
+        conn.close()
+        return redirect('/')
+
+    c.execute("SELECT * FROM issues WHERE id = %s", (issue_id,))
+    issue = c.fetchone()
+    conn.close()
+    return render_template("edit_issue.html", issue=issue)
+
+
 if __name__ == "__main__":
     init_db()
     port = int(os.environ.get("PORT", 10000))
